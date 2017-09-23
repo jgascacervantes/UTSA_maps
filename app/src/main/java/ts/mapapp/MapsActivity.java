@@ -2,7 +2,9 @@ package ts.mapapp;
 
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
+import android.util.Log;
 
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
@@ -14,7 +16,7 @@ import com.google.android.gms.maps.model.PolylineOptions;
 public class MapsActivity extends FragmentActivity implements OnMapReadyCallback {
 
     private GoogleMap mMap;
-
+    private static final String TAG = "debug tag";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,9 +40,14 @@ public class MapsActivity extends FragmentActivity implements OnMapReadyCallback
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
+        boolean success = mMap.setMapStyle(new MapStyleOptions(getResources()
+                .getString(R.string.style_json)));
+
+        if (!success) {
+            Log.e(TAG, "Style parsing failed.");
+        }
+
         LatLng utsa = new LatLng(29.5830, -98.6197);
-        mMap.addMarker(new MarkerOptions().position(utsa).title("UTSA"));
-        mMap.addPolyline(new PolylineOptions().geodesic(true).add(utsa).add(new LatLng(29.5850,-98.6180)));
         mMap.moveCamera(CameraUpdateFactory.newLatLng(utsa));
         mMap.setMinZoomPreference(16);
 
