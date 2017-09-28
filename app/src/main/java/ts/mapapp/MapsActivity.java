@@ -4,6 +4,7 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.net.NetworkInfo;
 import android.os.Build;
 import android.support.v4.app.FragmentActivity;
 import android.os.Bundle;
@@ -12,6 +13,8 @@ import android.support.v7.widget.SearchView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
+import android.net.ConnectivityManager;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.CameraUpdateFactory;
@@ -20,11 +23,19 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback {
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, DownloadCallback {
+    private NetworkFragment mNetworkFragment;
+    private boolean mDownloading = false;
 
     private GoogleMap mMap;
+    private Polyline mShortestPath;
     DatabaseTable db;
     private static final String TAG = "debug tag";
     @Override
@@ -35,6 +46,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
+        //TODO: remove test url
+        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL(100,101,200,201));
         db = new DatabaseTable(this);
         handleIntent(getIntent());
     }
@@ -57,28 +70,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
 
-    /**
-     * Manipulates the map once available.
-     * This callback is triggered when the map is ready to be used.
-     * This is where we can add markers or lines, add listeners or move the camera. In this case,
-     * we just add a marker near Sydney, Australia.
-     * If Google Play services is not installed on the device, the user will be prompted to install
-     * it inside the SupportMapFragment. This method will only be triggered once the user has
-     * installed Google Play services and returned to the app.
-     */
+
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
         boolean success = mMap.setMapStyle(new MapStyleOptions(getResources()
                 .getString(R.string.style_json)));
-
         if (!success) {
             Log.e(TAG, "Style parsing failed.");
         }
+        //TODO:tests
+        String test = "{\"result\":\"ok\",\"message\":[{\"1\":{\"from_lat\":29.582521,\"from_lng\":-98.61959,\"to_lat\":29.583156,\"to_lng\":-98.61841}},{\"2\":{\"from_lat\":29.583156,\"from_lng\":-98.61841,\"to_lat\":29.585619,\"to_lng\":-98.619204}},{\"3\":{\"from_lat\":29.585619,\"from_lng\":-98.619204,\"to_lat\":29.584406,\"to_lng\":-98.618302}}]}";
+        mShortestPath = mMap.addPolyline(stringJSONToPolyLine(test));
+        //getPath(100,101,200,201);
 
         LatLng utsa = new LatLng(29.5830, -98.6197);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(utsa));
         mMap.setMinZoomPreference(16);
+
 
     }
 
@@ -97,5 +106,105 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 searchManager.getSearchableInfo(getComponentName()));
 
         return true;
+    }
+
+
+    private void getPath(double sourcelat, double sourcelng, double destlat, double destlng) {
+        if (!mDownloading && mNetworkFragment != null) {
+            // Execute the async download.
+            mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL(sourcelat, sourcelng, destlat, destlng));
+            mNetworkFragment.startDownload();
+            mDownloading = true;
+        }
+    }
+
+    @Override
+    public void updateFromDownload(String result) {
+
+        if (result != null) {
+            PolylineOptions resultPath = stringJSONToPolyLine(result);
+            mShortestPath = mMap.addPolyline(resultPath);
+        } else {
+            Toast.makeText(this.getApplicationContext(), "Connection Error", Toast.LENGTH_SHORT);
+        }
+    }
+
+    @Override
+    public NetworkInfo getActiveNetworkInfo() {
+        ConnectivityManager connectivityManager =
+                (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        return networkInfo;
+    }
+
+    @Override
+    public void finishDownloading() {
+        mDownloading = false;
+        if (mNetworkFragment != null) {
+            mNetworkFragment.cancelDownload();
+        }
+    }
+
+    @Override
+    public void onProgressUpdate(int progressCode, int percentComplete) {
+        switch(progressCode) {
+            // You can add UI behavior for progress updates here.
+            case Progress.ERROR:
+                Log.d("PROGRESS", "ERR");
+                break;
+            case Progress.CONNECT_SUCCESS:
+                Log.d("PROGRESS", "SUCCESS");
+                break;
+            case Progress.GET_INPUT_STREAM_SUCCESS:
+                Log.d("PROGRESS", "GETINPUT");
+                break;
+            case Progress.PROCESS_INPUT_STREAM_IN_PROGRESS:
+                Log.d("PROGRESS", "INPUTIP");
+                //mDataText.setText("" + percentComplete + "%");
+                break;
+            case Progress.PROCESS_INPUT_STREAM_SUCCESS:
+                Log.d("PROGRESS", "PROCESSED");
+                break;
+        }
+    }
+
+    public String makeURL(double sourcelat, double sourcelng, double destlat,
+                          double destlng) {
+        StringBuilder urlString = new StringBuilder();
+        urlString.append("http://easel2.fulgentcorp.com:8081/getPath?api_key=gibson");
+        urlString.append("&from_lat=");
+        urlString.append(Double.toString(sourcelat));
+        urlString.append("&from_lng=");
+        urlString.append(Double.toString(sourcelng));
+        urlString.append("&to_lat=");
+        urlString.append(Double.toString(destlat));
+        urlString.append("&to_lng=");
+        urlString.append(Double.toString(destlng));
+        return urlString.toString();
+    }
+
+    public PolylineOptions stringJSONToPolyLine(String resultString){
+        Log.d("RESPONSE", resultString); //TODO: this SHOULD contain the JSON
+        PolylineOptions result = new PolylineOptions().width(15);
+        JSONObject resultJSON;
+        try {
+            resultJSON = new JSONObject(resultString);
+            JSONArray lineSegments = resultJSON.getJSONArray("message");
+            for(int i = 0; i < lineSegments.length(); i++) {
+                JSONObject segment = lineSegments.getJSONObject(i);
+                JSONObject latLongs = segment.getJSONObject(segment.keys().next());
+                double fromLat = latLongs.getDouble("from_lat");
+                double fromLng = latLongs.getDouble("from_lng");
+                double toLat = latLongs.getDouble("to_lat");
+                double toLng = latLongs.getDouble("to_lng");
+
+                result.add(new LatLng(fromLat, fromLng)).add(new LatLng(toLat,toLng));
+            }
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+
+        return result;
     }
 }
