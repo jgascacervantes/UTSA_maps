@@ -1,6 +1,7 @@
 package ts.mapapp;
 
 
+import android.app.DownloadManager;
 import android.content.Context;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -222,23 +223,24 @@ public class NetworkFragment extends Fragment {
             URL testURL = new URL("http://easel2.fulgentcorp.com:8081/getPath");
 
             try {
-                connection = (HttpURLConnection) testURL.openConnection();//TODO: change testURL to url
+                connection = (HttpURLConnection) url.openConnection();//TODO: change testURL to url
 
                 // Timeout for reading InputStream arbitrarily set to 3000ms.
                 connection.setReadTimeout(3000);
                 // Timeout for connection.connect() arbitrarily set to 3000ms.
                 connection.setConnectTimeout(3000);
                 // For this use case, set HTTP method to GET.
-                connection.setRequestMethod("POST");
-
-                connection.setDoOutput(true);
+                connection.setRequestMethod("GET");//TODO:change to POST when we can request
+                //connection.setDoOutput(true);
                 // Open communications link (network traffic occurs here).
+                /*TODO:this will work when we can make requests
                 String testParameters = "api_key=gibson&from_lat=100&from_lng=101&to_lat=200&to_lng=201";
                 DataOutputStream wr= new DataOutputStream(connection.getOutputStream());
                 wr.writeBytes(testParameters);
                 wr.flush();
                 wr.close();
-
+                   */
+                connection.connect();
                 publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
                 int responseCode = connection.getResponseCode();
                 if (responseCode != HttpsURLConnection.HTTP_OK) {

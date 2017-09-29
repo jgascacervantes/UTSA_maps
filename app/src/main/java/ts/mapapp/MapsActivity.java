@@ -80,9 +80,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Log.e(TAG, "Style parsing failed.");
         }
         //TODO:tests
-        String test = "{\"result\":\"ok\",\"message\":[{\"1\":{\"from_lat\":29.582521,\"from_lng\":-98.61959,\"to_lat\":29.583156,\"to_lng\":-98.61841}},{\"2\":{\"from_lat\":29.583156,\"from_lng\":-98.61841,\"to_lat\":29.585619,\"to_lng\":-98.619204}},{\"3\":{\"from_lat\":29.585619,\"from_lng\":-98.619204,\"to_lat\":29.584406,\"to_lng\":-98.618302}}]}";
-        mShortestPath = mMap.addPolyline(stringJSONToPolyLine(test));
-        //getPath(100,101,200,201);
+        //String test = "{\"result\":\"ok\",\"message\":[{\"1\":{\"from_lat\":29.582521,\"from_lng\":-98.61959,\"to_lat\":29.583156,\"to_lng\":-98.61841}},{\"2\":{\"from_lat\":29.583156,\"from_lng\":-98.61841,\"to_lat\":29.585619,\"to_lng\":-98.619204}},{\"3\":{\"from_lat\":29.585619,\"from_lng\":-98.619204,\"to_lat\":29.584406,\"to_lng\":-98.618302}}]}";
+        //mShortestPath = mMap.addPolyline(stringJSONToPolyLine(test));
+        getPath(100,101,200,201);
 
         LatLng utsa = new LatLng(29.5830, -98.6197);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(utsa));
