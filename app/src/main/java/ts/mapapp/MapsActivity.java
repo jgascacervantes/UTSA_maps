@@ -5,8 +5,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
 import android.net.NetworkInfo;
-import android.os.Build;
-import android.support.v4.app.FragmentActivity;
+
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
@@ -26,13 +25,20 @@ import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
 
+
+import android.Manifest;
+import android.content.pm.PackageManager;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, DownloadCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, DownloadCallback,ActivityCompat.OnRequestPermissionsResultCallback {
     private NetworkFragment mNetworkFragment;
     private boolean mDownloading = false;
+    private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
 
     private GoogleMap mMap;
     private Polyline mShortestPath;
@@ -79,6 +85,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (!success) {
             Log.e(TAG, "Style parsing failed.");
         }
+        enableMyLocation();
         //TODO:tests
         //String test = "{\"result\":\"ok\",\"message\":[{\"1\":{\"from_lat\":29.582521,\"from_lng\":-98.61959,\"to_lat\":29.583156,\"to_lng\":-98.61841}},{\"2\":{\"from_lat\":29.583156,\"from_lng\":-98.61841,\"to_lat\":29.585619,\"to_lng\":-98.619204}},{\"3\":{\"from_lat\":29.585619,\"from_lng\":-98.619204,\"to_lat\":29.584406,\"to_lng\":-98.618302}}]}";
         //mShortestPath = mMap.addPolyline(stringJSONToPolyLine(test));
@@ -206,5 +213,17 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         return result;
+    }
+
+    private void enableMyLocation() {
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            // Permission to access the location is missing.
+            requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
+            mMap.setMyLocationEnabled(true);
+        } else if (mMap != null) {
+            // Access to the location has been granted to the app.
+            mMap.setMyLocationEnabled(true);
+        }
     }
 }
