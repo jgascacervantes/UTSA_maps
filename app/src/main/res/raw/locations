@@ -1,14 +1,21 @@
+University of Texas at San Antonio 29.5830 -98.6197
 utsa 29.5830 -98.6197
 Business Building 29.585112 -98.618097
+BB 29.585112 -98.618097
 North Paseo Building 29.585766 -98.619635
+NPB 29.585766 -98.619635
 Graduate School And Research 29.585643 -98.620377
 McKinney Humanities Building 29.584436 -98.619034
+MH 29.584436 -98.619034
 Bauerle Road Garage 29.585979 -98.616945
 Main Building 29.584713 -98.616850
 John Peace Library 29.584276 -98.617822
+JPL 29.584276 -98.617822
 Multidisciplinary Studies Building 29.583335 -98.619204
+MS 29.583335 -98.619204
 Tobin Ave Garage 29.586322 -98.620770
 Flawn Science Building 29.582835 -98.618546
+Flawn 29.582835 -98.618546
 Arts Building 29.583435 -98.617755
 Engineering Building 29.582439 -98.617855
 Biotechnology Sciences And Engineering Building 29.581873 -98.617262
@@ -38,3 +45,6 @@ Chisholm Hall 29.584922 -98.626613
 Activity Center 29.585399 -98.625600
 Sombrilla Plaza 29.584116 -98.618248
 University Center 29.584142 -98.620149
+UC 29.584142 -98.620149
+HEB University Center 29.584142 -98.620149
+HEB UC 29.584142 -98.620149
