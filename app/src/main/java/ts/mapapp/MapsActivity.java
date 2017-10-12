@@ -69,6 +69,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 Cursor c = db.getWordMatches(query, null);
                 LatLng searched = new LatLng(c.getDouble(1), c.getDouble(2));
+                mMap.addMarker(new MarkerOptions().position(searched).title(query));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(searched));
             } catch (NullPointerException e) {
             }
