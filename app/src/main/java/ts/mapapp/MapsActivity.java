@@ -4,6 +4,7 @@ import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
 import android.database.Cursor;
+import android.graphics.Color;
 import android.net.NetworkInfo;
 
 import android.os.Bundle;
@@ -35,7 +36,7 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, DownloadCallback,ActivityCompat.OnRequestPermissionsResultCallback {
+public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, DownloadCallback, ActivityCompat.OnRequestPermissionsResultCallback {
     private NetworkFragment mNetworkFragment;
     private boolean mDownloading = false;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
@@ -65,11 +66,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void handleIntent(Intent intent) {
         if (Intent.ACTION_SEARCH.equals(intent.getAction())) {
+            MarkerOptions pin = new MarkerOptions();
             String query = intent.getStringExtra(SearchManager.QUERY);
             try {
                 Cursor c = db.getWordMatches(query, null);
                 LatLng searched = new LatLng(c.getDouble(1), c.getDouble(2));
-                mMap.addMarker(new MarkerOptions().position(searched).title(query));
+                mMap.clear();
+                mMap.addMarker(pin.position(searched).title(query));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(searched));
             } catch (NullPointerException e) {
             }
@@ -126,12 +129,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
+    //Networking Code begin
     @Override
     public void updateFromDownload(String result) {
 
         if (result != null) {
             PolylineOptions resultPath = stringJSONToPolyLine(result);
-            mShortestPath = mMap.addPolyline(resultPath);
+            mShortestPath = mMap.addPolyline(resultPath.color(Color.YELLOW));
         } else {
             Toast.makeText(this.getApplicationContext(), "Connection Error", Toast.LENGTH_SHORT);
         }
@@ -215,6 +219,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         return result;
     }
+    //Networking Code end
 
     private void enableMyLocation() {
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
