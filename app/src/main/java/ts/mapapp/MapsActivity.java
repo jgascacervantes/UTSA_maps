@@ -70,7 +70,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             String query = intent.getStringExtra(SearchManager.QUERY);
             try {
                 Cursor c = db.getWordMatches(query, null);
-                LatLng searched = new LatLng(c.getDouble(1), c.getDouble(2));
+                Log.d(TAG, "handleIntent: cursor " + c.getString(0) + " " + c.getString(1) + c.getString(2) + " " + c.getString(3) + " " + c.getString(4) + " " + c.getString(5));
+                LatLng searched = new LatLng(c.getDouble(5), c.getDouble(3));  // don't ask me why subscripts are 5 and 3 now idk what the FUCK is going on
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(searched));

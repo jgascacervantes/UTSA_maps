@@ -46,6 +46,9 @@
                 android:resource="@xml/searchable" />
         </activity>
 
+        <provider android:name=".LocationsProvider"
+            android:authorities="ts.mapapp.LocationsProvider" />
+
     </application>
 
 </manifest>
