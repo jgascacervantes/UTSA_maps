@@ -1,5 +1,6 @@
 package ts.mapapp;
 
+import android.app.SearchManager;
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.res.Resources;
@@ -7,10 +8,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteQueryBuilder;
+import android.provider.BaseColumns;
 import android.util.Log;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
 import java.util.Scanner;
 
 /**
@@ -21,7 +24,7 @@ public class DatabaseTable {
     private static final String TAG = "LocationDatabase";
 
     //The columns we'll include in the dictionary table
-    public static final String COL_NAME = "NAME";
+    public static final String COL_NAME = SearchManager.SUGGEST_COLUMN_TEXT_1;
     public static final String COL_LATITUDE = "LATITUDE";
     public static final String COL_LONGITUDE = "LONGITUDE";
 
@@ -30,11 +33,38 @@ public class DatabaseTable {
     private static final int DATABASE_VERSION = 1;
 
     private final DatabaseOpenHelper mDatabaseOpenHelper;
+    private static final HashMap<String,String> mColumnMap = buildColumnMap();
 
     public DatabaseTable(Context context) {
         Log.e(TAG, "hello");
         mDatabaseOpenHelper = new DatabaseOpenHelper(context);
     }
+
+    private static HashMap<String,String> buildColumnMap() {
+        HashMap<String,String> map = new HashMap<String,String>();
+        map.put(COL_NAME, COL_NAME);
+        map.put(COL_LATITUDE, COL_LATITUDE);
+        map.put(COL_LONGITUDE, COL_LONGITUDE);
+        map.put(BaseColumns._ID, "rowid AS " +
+                BaseColumns._ID);
+        map.put(SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID, "rowid AS " +
+                SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID);
+        map.put(SearchManager.SUGGEST_COLUMN_SHORTCUT_ID, "rowid AS " +
+                SearchManager.SUGGEST_COLUMN_SHORTCUT_ID);
+        return map;
+    }
+
+    public Cursor getWord(String rowId, String[] columns) {
+        String selection = "rowid = ?";
+        String[] selectionArgs = new String[] {rowId};
+
+        return query(selection, selectionArgs, columns);
+
+        /* This builds a query that looks like:
+         *     SELECT <columns> FROM <table> WHERE rowid = <rowId>
+         */
+    }
+
 
     public Cursor getWordMatches(String query, String[] columns) {
         String selection = COL_NAME + " MATCH ?";
@@ -44,6 +74,30 @@ public class DatabaseTable {
     }
 
     private Cursor query(String selection, String[] selectionArgs, String[] columns) {
+        SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
+        builder.setTables(FTS_VIRTUAL_TABLE);
+        builder.setProjectionMap(mColumnMap);
+
+        Cursor cursor = builder.query(mDatabaseOpenHelper.getReadableDatabase(),
+                columns, selection, selectionArgs, null, null, null);
+
+        if (cursor == null) {
+            return null;
+        } else if (!cursor.moveToFirst()) {
+            cursor.close();
+            return null;
+        }
+        return cursor;
+    }
+
+    public Cursor getWordMatches2(String query, String[] columns) {
+        String selection = COL_NAME + " MATCH ?";
+        String[] selectionArgs = new String[] {query+"*"};
+
+        return query(selection, selectionArgs, columns);
+    }
+
+    private Cursor query2(String selection, String[] selectionArgs, String[] columns) {
         SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
         builder.setTables(FTS_VIRTUAL_TABLE);
 
