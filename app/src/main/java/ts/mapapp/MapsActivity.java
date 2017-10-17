@@ -71,7 +71,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 Cursor c = db.getWordMatches(query, null);
                 Log.d(TAG, "handleIntent: cursor " + c.getString(0) + " " + c.getString(1) + c.getString(2) + " " + c.getString(3) + " " + c.getString(4) + " " + c.getString(5));
-                LatLng searched = new LatLng(c.getDouble(5), c.getDouble(3));  // don't ask me why subscripts are 5 and 3 now idk what the FUCK is going on
+                LatLng searched = new LatLng(c.getDouble(5), c.getDouble(4));  // don't ask me why subscripts are 5 and 3 now idk what the FUCK is going on
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(searched));
@@ -146,7 +146,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public NetworkInfo getActiveNetworkInfo() {
         ConnectivityManager connectivityManager =
                 (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connectivityManager.getActiveNetworkInfo();
+        NetworkInfo     networkInfo = connectivityManager.getActiveNetworkInfo();
         return networkInfo;
     }
 
@@ -227,7 +227,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 != PackageManager.PERMISSION_GRANTED) {
             // Permission to access the location is missing.
             requestPermissions(new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 0);
-            mMap.setMyLocationEnabled(true);
         } else if (mMap != null) {
             // Access to the location has been granted to the app.
             mMap.setMyLocationEnabled(true);
