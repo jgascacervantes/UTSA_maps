@@ -3,9 +3,13 @@ package ts.mapapp;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentSender;
 import android.database.Cursor;
 import android.graphics.Color;
 import android.net.NetworkInfo;
+import android.location.LocationManager;
+import android.location.LocationListener;
+import android.location.Location;
 
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -45,6 +49,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Polyline mShortestPath;
     DatabaseTable db;
     private static final String TAG = "debug tag";
+
+    LocationManager locM;
+    LocationListener locL;
+    Location currentLoc;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -55,6 +64,50 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
         //TODO: remove test url
         mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL(100,101,200,201));
+
+
+        locM = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
+        try {
+            currentLoc = locM.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if(currentLoc != null)
+                Toast.makeText(getApplicationContext(),"Location Found",Toast.LENGTH_LONG).show();
+            else
+                Toast.makeText(getApplicationContext(),"Location Not Found",Toast.LENGTH_LONG).show();
+        }
+        catch(SecurityException e)
+        {
+            Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
+        }
+        // Define a listener that responds to location updates
+        locL = new LocationListener() {
+            @Override
+            public void onLocationChanged(Location location) {
+                currentLoc = location;
+            }
+
+            @Override
+            public void onStatusChanged(String provider, int status, Bundle extras) {
+
+            }
+
+            @Override
+            public void onProviderEnabled(String provider) {
+
+            }
+
+            @Override
+            public void onProviderDisabled(String provider) {
+
+            }
+        };
+
+        try {
+            locM.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locL);
+        }
+        catch(SecurityException e)
+        {
+            Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
+        }
         db = new DatabaseTable(this);
         handleIntent(getIntent());
     }
@@ -72,10 +125,13 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Cursor c = db.getWordMatches(query, null);
                 Log.d(TAG, "handleIntent: cursor " + c.getString(0) + " " + c.getString(1) + c.getString(2) + " " + c.getString(3) + " " + c.getString(4) + " " + c.getString(5));
                 LatLng searched = new LatLng(c.getDouble(5), c.getDouble(4));  // don't ask me why subscripts are 5 and 3 now idk what the FUCK is going on
+
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(searched));
+                getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
+                Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
             }
         }
     }
