@@ -1,5 +1,6 @@
 package ts.mapapp;
 
+import java.util.ArrayList;
 import android.app.SearchManager;
 import android.content.Context;
 import android.content.Intent;
@@ -20,6 +21,8 @@ import android.view.MenuInflater;
 import android.net.ConnectivityManager;
 import android.widget.Toast;
 
+import com.google.android.gms.maps.model.TileOverlayOptions;
+import com.google.android.gms.maps.model.TileOverlay;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -29,6 +32,7 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.android.gms.maps.model.Polyline;
 import com.google.android.gms.maps.model.PolylineOptions;
+import com.google.maps.android.heatmaps.HeatmapTileProvider;
 
 
 import android.Manifest;
@@ -44,9 +48,12 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private NetworkFragment mNetworkFragment;
     private boolean mDownloading = false;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
+    private  Integer callbackType = 0;// 0 available, 1 getpath, 2 gettraffic, 3 logposition
 
     private GoogleMap mMap;
     private Polyline mShortestPath;
+    private HeatmapTileProvider mProvider;
+    private TileOverlay mOverlay;
     DatabaseTable db;
     private static final String TAG = "debug tag";
 
@@ -62,8 +69,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
-        //TODO: remove test url
-        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL(100,101,200,201));
+
+        mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("getPath",100,101,200,201));
 
 
         locM = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
@@ -129,6 +136,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.moveCamera(CameraUpdateFactory.newLatLng(searched));
+                getTraffic();
                 getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
                 Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
@@ -147,14 +155,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             Log.e(TAG, "Style parsing failed.");
         }
         enableMyLocation();
-        //TODO:tests
-        //String test = "{\"result\":\"ok\",\"message\":[{\"1\":{\"from_lat\":29.582521,\"from_lng\":-98.61959,\"to_lat\":29.583156,\"to_lng\":-98.61841}},{\"2\":{\"from_lat\":29.583156,\"from_lng\":-98.61841,\"to_lat\":29.585619,\"to_lng\":-98.619204}},{\"3\":{\"from_lat\":29.585619,\"from_lng\":-98.619204,\"to_lat\":29.584406,\"to_lng\":-98.618302}}]}";
-        //mShortestPath = mMap.addPolyline(stringJSONToPolyLine(test));
-        getPath(100,101,200,201);
 
         LatLng utsa = new LatLng(29.5830, -98.6197);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(utsa));
         mMap.setMinZoomPreference(16);
+
 
 
     }
@@ -179,10 +184,31 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void getPath(double sourcelat, double sourcelng, double destlat, double destlng) {
         if (!mDownloading && mNetworkFragment != null) {
-            // Execute the async download.
-            mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL(sourcelat, sourcelng, destlat, destlng));
+            mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("getPath", sourcelat, sourcelng, destlat, destlng));
+            mNetworkFragment.setmUrlString(makeURL("getPath", sourcelat, sourcelng, destlat, destlng));
             mNetworkFragment.startDownload();
             mDownloading = true;
+            callbackType = 1;
+        }
+    }
+
+    private void getTraffic(){
+        if (!mDownloading && mNetworkFragment != null) {
+            mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), "http://easel2.fulgentcorp.com:8081/getTraffic?api_key=gibson");
+            mNetworkFragment.setmUrlString("http://easel2.fulgentcorp.com:8081/getTraffic?api_key=gibson");
+            mNetworkFragment.startDownload();
+            mDownloading = true;
+            callbackType = 2;
+        }
+    }
+
+    private void logPosition(double lat, double lng){
+        if (!mDownloading && mNetworkFragment != null) {
+            mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("logPosition", lat, lng, lat, lng));
+            mNetworkFragment.setmUrlString(makeURL("logPosition", lat, lng, lat, lng));
+            mNetworkFragment.startDownload();
+            mDownloading = true;
+            callbackType = 3;
         }
     }
 
@@ -191,11 +217,30 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void updateFromDownload(String result) {
 
         if (result != null) {
-            PolylineOptions resultPath = stringJSONToPolyLine(result);
-            mShortestPath = mMap.addPolyline(resultPath.color(Color.YELLOW));
+            Log.d("RESPONSE", result);
+            switch (callbackType) {
+
+                case 1:
+                    PolylineOptions resultPath = stringJSONToPolyLine(result);
+                    mShortestPath = mMap.addPolyline(resultPath.color(Color.YELLOW));
+                case 2:
+                    try {
+                        ArrayList<LatLng> trafficPoints = stringToHeatmap(result);
+                        mProvider = new HeatmapTileProvider.Builder()
+                                .data(trafficPoints)
+                                .build();
+                        mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
+                    } catch (JSONException e){
+                        e.printStackTrace();
+                    }
+
+                case 3:
+                    //TODO SUCCESS MESSAGE
+            }
         } else {
             Toast.makeText(this.getApplicationContext(), "Connection Error", Toast.LENGTH_SHORT);
         }
+        callbackType = 0;
     }
 
     @Override
@@ -237,23 +282,31 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
     }
 
-    public String makeURL(double sourcelat, double sourcelng, double destlat,
+    public String makeURL(String func, double sourcelat, double sourcelng, double destlat,
                           double destlng) {
         StringBuilder urlString = new StringBuilder();
-        urlString.append("http://easel2.fulgentcorp.com:8081/getPath?api_key=gibson");
-        urlString.append("&from_lat=");
-        urlString.append(Double.toString(sourcelat));
-        urlString.append("&from_lng=");
-        urlString.append(Double.toString(sourcelng));
-        urlString.append("&to_lat=");
-        urlString.append(Double.toString(destlat));
-        urlString.append("&to_lng=");
-        urlString.append(Double.toString(destlng));
+        if(func.equals("getPath")){
+            urlString.append("http://easel2.fulgentcorp.com:8081/getPath?api_key=gibson");
+            urlString.append("&from_lat=");
+            urlString.append(Double.toString(sourcelat));
+            urlString.append("&from_lng=");
+            urlString.append(Double.toString(sourcelng));
+            urlString.append("&to_lat=");
+            urlString.append(Double.toString(destlat));
+            urlString.append("&to_lng=");
+            urlString.append(Double.toString(destlng));
+        } else if(func.equals("logPosition")){
+            urlString.append("http://easel2.fulgentcorp.com:8081/logPosition?api_key=gibson");
+            urlString.append("&lat=");
+            urlString.append(Double.toString(sourcelat));
+            urlString.append("&lng=");
+            urlString.append(Double.toString(sourcelng));
+        }
         return urlString.toString();
     }
 
     public PolylineOptions stringJSONToPolyLine(String resultString){
-        Log.d("RESPONSE", resultString); //TODO: this SHOULD contain the JSON
+
         PolylineOptions result = new PolylineOptions().width(15);
         JSONObject resultJSON;
         try {
@@ -275,6 +328,27 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         }
 
         return result;
+    }
+
+    private ArrayList<LatLng> stringToHeatmap(String resultString) throws JSONException{
+        Log.d("RESPONSE", resultString);
+        ArrayList<LatLng> trafficPoints = new ArrayList<LatLng>();
+        JSONObject resultJSON = new JSONObject(resultString);
+        JSONArray lineSegments = resultJSON.getJSONArray("message");
+        for(int i = 0; i < lineSegments.length(); i++) {
+            JSONObject segment = lineSegments.getJSONObject(i);
+            JSONObject latLongs = segment.getJSONObject(segment.keys().next());
+            double fromLat = latLongs.getDouble("from_lat");
+            double fromLng = latLongs.getDouble("from_lng");
+            double toLat = latLongs.getDouble("to_lat");
+            double toLng = latLongs.getDouble("to_lng");
+
+            trafficPoints.add(new LatLng(fromLat, fromLng));
+        }
+        for(int i = 0; i < trafficPoints.size(); i++){
+            Log.d("POINTS", trafficPoints.get(i).toString());
+        }
+        return trafficPoints;
     }
     //Networking Code end
 

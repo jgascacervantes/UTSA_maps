@@ -32,6 +32,7 @@ import javax.net.ssl.HttpsURLConnection;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import org.apache.commons.io.IOUtils;
 
 /**
  * Implementation of headless Fragment that runs an AsyncTask to fetch data from the network.
@@ -43,6 +44,7 @@ public class NetworkFragment extends Fragment {
 
     private DownloadCallback mCallback;
     private DownloadTask mDownloadTask;
+
     private String mUrlString;
 
     /**
@@ -57,7 +59,7 @@ public class NetworkFragment extends Fragment {
         // setRetainInstance(true) upon creation.
         NetworkFragment networkFragment = (NetworkFragment) fragmentManager
                 .findFragmentByTag(NetworkFragment.TAG);
-        if (networkFragment == null) {
+        if (networkFragment == null ) {
             networkFragment = new NetworkFragment();
             Bundle args = new Bundle();
             args.putString(URL_KEY, url);
@@ -113,6 +115,9 @@ public class NetworkFragment extends Fragment {
             mDownloadTask.cancel(true);
             mDownloadTask = null;
         }
+    }
+    public void setmUrlString(String mUrlString) {
+        this.mUrlString = mUrlString;
     }
 
     /**
@@ -220,26 +225,14 @@ public class NetworkFragment extends Fragment {
             InputStream stream = null;
             HttpURLConnection connection = null;
             String result = null;
-            URL testURL = new URL("http://easel2.fulgentcorp.com:8081/getPath");
 
             try {
-                connection = (HttpURLConnection) url.openConnection();//TODO: change testURL to url
+                connection = (HttpURLConnection) url.openConnection();
 
-                // Timeout for reading InputStream arbitrarily set to 3000ms.
-                connection.setReadTimeout(3000);
-                // Timeout for connection.connect() arbitrarily set to 3000ms.
-                connection.setConnectTimeout(3000);
-                // For this use case, set HTTP method to GET.
-                connection.setRequestMethod("GET");//TODO:change to POST when we can request
-                //connection.setDoOutput(true);
-                // Open communications link (network traffic occurs here).
-                /*TODO:this will work when we can make requests
-                String testParameters = "api_key=gibson&from_lat=100&from_lng=101&to_lat=200&to_lng=201";
-                DataOutputStream wr= new DataOutputStream(connection.getOutputStream());
-                wr.writeBytes(testParameters);
-                wr.flush();
-                wr.close();
-                   */
+                connection.setReadTimeout(10000);
+                connection.setConnectTimeout(10000);
+                connection.setRequestMethod("GET");
+                connection.setDoInput(true);
                 connection.connect();
                 publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
                 int responseCode = connection.getResponseCode();
@@ -251,9 +244,8 @@ public class NetworkFragment extends Fragment {
 
                 publishProgress(DownloadCallback.Progress.GET_INPUT_STREAM_SUCCESS, 0);
                 if (stream != null) {
-                    // Converts Stream to String with max length of 500.
-                    result = readStream(stream, 500);
-
+                    result = readStream(stream);
+                    //result = IOUtils.toString(connection.getInputStream(), "UTF-8");
                     publishProgress(DownloadCallback.Progress.PROCESS_INPUT_STREAM_SUCCESS, 0);
                 }
             } finally {
@@ -271,28 +263,19 @@ public class NetworkFragment extends Fragment {
         /**
          * Converts the contents of an InputStream to a String
          */
-        private String readStream(InputStream stream, int maxLength) throws IOException {
+        private String readStream(InputStream stream) throws IOException {
             String result = null;
             // Read InputStream using the UTF-8 charset.
-            InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
-            // Create temporary buffer to hold Stream data with specified max length.
-            char[] buffer = new char[maxLength];
-            // Populate temporary buffer with Stream data.
-            int numChars = 0;
-            int readSize = 0;
-            while (numChars < maxLength && readSize != -1) {
-                numChars += readSize;
-                int pct = (100 * numChars) / maxLength;
-                publishProgress(DownloadCallback.Progress.PROCESS_INPUT_STREAM_IN_PROGRESS, pct);
-                readSize = reader.read(buffer, numChars, buffer.length - numChars);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(stream, "UTF-8"), 8);
+            StringBuilder sb = new StringBuilder();
+
+            String line = null;
+            while ((line = reader.readLine()) != null && !line.equals(""))
+            {
+                Log.d("READER", line);
+                sb.append(line + "\n");
             }
-            if (numChars != -1) {
-                // The stream was not empty.
-                // Create String that is actual length of response body if actual length was less than
-                // max length.
-                numChars = Math.min(numChars, maxLength);
-                result = new String(buffer, 0, numChars);
-            }
+            result = sb.toString();
             return result;
         }
     }
