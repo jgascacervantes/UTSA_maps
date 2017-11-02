@@ -158,7 +158,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         LatLng utsa = new LatLng(29.5830, -98.6197);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(utsa));
-        mMap.setMinZoomPreference(16);
+        mMap.setMinZoomPreference(16);//16
 
 
 
@@ -227,7 +227,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     try {
                         ArrayList<LatLng> trafficPoints = stringToHeatmap(result);
                         mProvider = new HeatmapTileProvider.Builder()
-                                .data(trafficPoints)
+                                .data(trafficPoints).radius(50)
                                 .build();
                         mOverlay = mMap.addTileOverlay(new TileOverlayOptions().tileProvider(mProvider));
                     } catch (JSONException e){
@@ -337,11 +337,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         JSONArray lineSegments = resultJSON.getJSONArray("message");
         for(int i = 0; i < lineSegments.length(); i++) {
             JSONObject segment = lineSegments.getJSONObject(i);
-            JSONObject latLongs = segment.getJSONObject(segment.keys().next());
-            double fromLat = latLongs.getDouble("from_lat");
-            double fromLng = latLongs.getDouble("from_lng");
-            double toLat = latLongs.getDouble("to_lat");
-            double toLng = latLongs.getDouble("to_lng");
+            double fromLat = segment.getDouble("lat");
+            double fromLng = segment.getDouble("lng");
 
             trafficPoints.add(new LatLng(fromLat, fromLng));
         }

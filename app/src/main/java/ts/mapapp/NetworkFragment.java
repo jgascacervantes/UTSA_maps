@@ -233,6 +233,7 @@ public class NetworkFragment extends Fragment {
                 connection.setConnectTimeout(10000);
                 connection.setRequestMethod("GET");
                 connection.setDoInput(true);
+
                 connection.connect();
                 publishProgress(DownloadCallback.Progress.CONNECT_SUCCESS);
                 int responseCode = connection.getResponseCode();
