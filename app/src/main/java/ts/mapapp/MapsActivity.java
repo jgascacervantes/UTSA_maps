@@ -1,5 +1,8 @@
 package ts.mapapp;
 
+import ts.mapapp.R;//really frickin important bcuz it lets us call on xml elements
+import android.R.id;
+
 import java.util.ArrayList;
 import android.app.SearchManager;
 import android.content.Context;
@@ -19,6 +22,7 @@ import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.net.ConnectivityManager;
+import android.widget.CheckBox;
 import android.widget.Toast;
 
 import com.google.android.gms.maps.model.TileOverlayOptions;
@@ -61,6 +65,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     LocationListener locL;
     Location currentLoc;
 
+    CheckBox followCheckBox;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -72,6 +78,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("getPath",100,101,200,201));
 
+        followCheckBox = (CheckBox) findViewById(R.id.followCheckBox);
 
         locM = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         try {
@@ -90,6 +97,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onLocationChanged(Location location) {
                 currentLoc = location;
+                if(followCheckBox.isChecked())
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLoc.getLatitude(),currentLoc.getLongitude())));
             }
 
             @Override
@@ -109,7 +118,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         };
 
         try {
-            locM.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 0, 0, locL);
+            locM.requestLocationUpdates(LocationManager.GPS_PROVIDER, 0, 0, locL);
         }
         catch(SecurityException e)
         {
@@ -238,7 +247,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     //TODO SUCCESS MESSAGE
             }
         } else {
-            Toast.makeText(this.getApplicationContext(), "Connection Error", Toast.LENGTH_SHORT);
+            Toast.makeText(this.getApplicationContext(), "Connection Error", Toast.LENGTH_SHORT).show();
         }
         callbackType = 0;
     }
