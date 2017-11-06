@@ -145,7 +145,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
-                mMap.moveCamera(CameraUpdateFactory.newLatLng(searched));
+                mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
                 getTraffic();
                 getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
