@@ -124,6 +124,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         {
             Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
         }
+        getTraffic();
         db = new DatabaseTable(this);
         handleIntent(getIntent());
     }
