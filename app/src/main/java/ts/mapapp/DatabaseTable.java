@@ -47,10 +47,10 @@ public class DatabaseTable {
         map.put(COL_LONGITUDE, COL_LONGITUDE);
         map.put(BaseColumns._ID, "rowid AS " +
                 BaseColumns._ID);
-        map.put(SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID, "rowid AS " +
-                SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID);
-        map.put(SearchManager.SUGGEST_COLUMN_SHORTCUT_ID, "rowid AS " +
-                SearchManager.SUGGEST_COLUMN_SHORTCUT_ID);
+        map.put(SearchManager.SUGGEST_COLUMN_INTENT_DATA, COL_NAME + " AS " +
+                SearchManager.SUGGEST_COLUMN_INTENT_DATA);
+        //map.put(SearchManager.SUGGEST_COLUMN_SHORTCUT_ID, "rowid AS " +
+        //        SearchManager.SUGGEST_COLUMN_SHORTCUT_ID);
         return map;
     }
 
@@ -77,29 +77,6 @@ public class DatabaseTable {
         SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
         builder.setTables(FTS_VIRTUAL_TABLE);
         builder.setProjectionMap(mColumnMap);
-
-        Cursor cursor = builder.query(mDatabaseOpenHelper.getReadableDatabase(),
-                columns, selection, selectionArgs, null, null, null);
-
-        if (cursor == null) {
-            return null;
-        } else if (!cursor.moveToFirst()) {
-            cursor.close();
-            return null;
-        }
-        return cursor;
-    }
-
-    public Cursor getWordMatches2(String query, String[] columns) {
-        String selection = COL_NAME + " MATCH ?";
-        String[] selectionArgs = new String[] {query+"*"};
-
-        return query(selection, selectionArgs, columns);
-    }
-
-    private Cursor query2(String selection, String[] selectionArgs, String[] columns) {
-        SQLiteQueryBuilder builder = new SQLiteQueryBuilder();
-        builder.setTables(FTS_VIRTUAL_TABLE);
 
         Cursor cursor = builder.query(mDatabaseOpenHelper.getReadableDatabase(),
                 columns, selection, selectionArgs, null, null, null);

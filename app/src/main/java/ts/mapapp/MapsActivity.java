@@ -15,6 +15,7 @@ import android.location.LocationManager;
 import android.location.LocationListener;
 import android.location.Location;
 
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
@@ -140,9 +141,24 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             String query = intent.getStringExtra(SearchManager.QUERY);
             try {
                 Cursor c = db.getWordMatches(query, null);
-                Log.d(TAG, "handleIntent: cursor " + c.getString(0) + " " + c.getString(1) + c.getString(2) + " " + c.getString(3) + " " + c.getString(4) + " " + c.getString(5));
-                LatLng searched = new LatLng(c.getDouble(5), c.getDouble(4));  // don't ask me why subscripts are 5 and 3 now idk what the FUCK is going on
-
+                Log.d(TAG, "handleIntent: cursor " + c.getString(0) + " " + c.getString(1) + " " + c.getString(2) + " " + c.getString(3) + " " + c.getString(4));
+                LatLng searched = new LatLng(c.getDouble(4), c.getDouble(1));  // You may need to fix these indices, look at the logcat
+                mMap.clear();
+                mMap.addMarker(pin.position(searched).title(query));
+                mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
+                getTraffic();
+                getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
+            } catch (NullPointerException e) {
+                Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
+            }
+        } else if (Intent.ACTION_VIEW.equals(intent.getAction())) {
+            Uri data = intent.getData();
+            MarkerOptions pin = new MarkerOptions();
+            String query = data.toString();
+            try {
+                Cursor c = db.getWordMatches(query, null);
+                Log.d(TAG, "handleIntent: cursor " + c.getString(0) + " " + c.getString(1) + " " + c.getString(2) + " " + c.getString(3) + " " + c.getString(4));
+                LatLng searched = new LatLng(c.getDouble(4), c.getDouble(1));  // You may need to fix these indices, look at the logcat
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
@@ -169,9 +185,6 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         LatLng utsa = new LatLng(29.5830, -98.6197);
         mMap.moveCamera(CameraUpdateFactory.newLatLng(utsa));
         mMap.setMinZoomPreference(16);//16
-
-
-
     }
 
     @Override

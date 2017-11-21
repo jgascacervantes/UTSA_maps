@@ -105,7 +105,7 @@ public class LocationsProvider extends ContentProvider {
                 //DatabaseTable.COL_LONGITUDE,
        /* SearchManager.SUGGEST_COLUMN_SHORTCUT_ID,
                         (only if you want to refresh shortcuts) */
-                SearchManager.SUGGEST_COLUMN_INTENT_DATA_ID};
+                SearchManager.SUGGEST_COLUMN_INTENT_DATA};
 
         return mLocations.getWordMatches(query, columns);
     }
