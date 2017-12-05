@@ -67,6 +67,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     Location currentLoc;
 
     CheckBox followCheckBox;
+    CheckBox heatMapCheckBoc;
+    int heatMapFlag = 0;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -80,6 +82,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("getPath",100,101,200,201));
 
         followCheckBox = (CheckBox) findViewById(R.id.followCheckBox);
+        heatMapCheckBoc = (CheckBox) findViewById(R.id.heatMapCheckBox);
 
         locM = (LocationManager) this.getSystemService(Context.LOCATION_SERVICE);
         try {
@@ -100,6 +103,15 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 currentLoc = location;
                 if(followCheckBox.isChecked())
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLoc.getLatitude(),currentLoc.getLongitude())));
+                if(heatMapCheckBoc.isChecked() && heatMapFlag == 0){
+                    getTraffic();
+                    heatMapFlag = 1;
+                }
+                if(!heatMapCheckBoc.isChecked()){
+                    heatMapFlag = 0;
+                    mOverlay.remove();
+                }
+
             }
 
             @Override
@@ -146,7 +158,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
-                getTraffic();
+                //getTraffic();
                 getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
                 Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
@@ -162,7 +174,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
-                getTraffic();
+                //getTraffic();
                 getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
                 Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
