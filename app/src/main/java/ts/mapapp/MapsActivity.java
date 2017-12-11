@@ -107,8 +107,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if(Double.compare(currentLoc.getLatitude(), mDestination.latitude) == 0 && Double.compare(currentLoc.getLongitude(),mDestination.longitude) ==0){
-                    Toast.makeText(getApplicationContext(), "This is my Toast message!",
+                if(Math.abs(currentLoc.getLatitude() - mDestination.latitude) <  1E-5 && Math.abs(currentLoc.getLongitude() - mDestination.longitude) <1E-5){
+                    Toast.makeText(getApplicationContext(), "You Have Reached Your Destination!",
                             Toast.LENGTH_LONG).show();
                     mMap.clear();
                 }
