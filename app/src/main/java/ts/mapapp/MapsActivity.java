@@ -14,7 +14,7 @@ import android.net.NetworkInfo;
 import android.location.LocationManager;
 import android.location.LocationListener;
 import android.location.Location;
-
+import android.os.AsyncTask;
 import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
@@ -51,9 +51,9 @@ import org.json.JSONObject;
 
 public class MapsActivity extends AppCompatActivity implements OnMapReadyCallback, DownloadCallback, ActivityCompat.OnRequestPermissionsResultCallback {
     private NetworkFragment mNetworkFragment;
-    private boolean mDownloading = false;
+    private  boolean mDownloading = false;
     private static final int LOCATION_PERMISSION_REQUEST_CODE = 1;
-    private  Integer callbackType = 0;// 0 available, 1 getpath, 2 gettraffic, 3 logposition
+    private volatile Integer callbackType = 0;// 0 available, 1 getpath, 2 gettraffic, 3 logposition
 
     private GoogleMap mMap;
     private Polyline mShortestPath;
@@ -101,6 +101,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onLocationChanged(Location location) {
                 currentLoc = location;
+                logPosition(currentLoc.getLatitude(),currentLoc.getLongitude());
                 if(followCheckBox.isChecked())
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLoc.getLatitude(),currentLoc.getLongitude())));
                 if(heatMapCheckBoc.isChecked() && heatMapFlag == 0){
@@ -154,11 +155,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 Cursor c = db.getWordMatches(query, null);
                 Log.d(TAG, "handleIntent: cursor " + c.getString(0) + " " + c.getString(1) + " " + c.getString(2) + " " + c.getString(3) + " " + c.getString(4));
-                LatLng searched = new LatLng(c.getDouble(4), c.getDouble(1));  // You may need to fix these indices, look at the logcat
+                LatLng searched = new LatLng(c.getDouble(4), c.getDouble(3));  // You may need to fix these indices, look at the logcat
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
-                //getTraffic();
+                getTraffic();
                 getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
                 Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
@@ -170,11 +171,11 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             try {
                 Cursor c = db.getWordMatches(query, null);
                 Log.d(TAG, "handleIntent: cursor " + c.getString(0) + " " + c.getString(1) + " " + c.getString(2) + " " + c.getString(3) + " " + c.getString(4));
-                LatLng searched = new LatLng(c.getDouble(4), c.getDouble(1));  // You may need to fix these indices, look at the logcat
+                LatLng searched = new LatLng(c.getDouble(4), c.getDouble(3));  // You may need to fix these indices, look at the logcat
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
-                //getTraffic();
+                getTraffic();
                 getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
                 Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
@@ -218,8 +219,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
 
     private void getPath(double sourcelat, double sourcelng, double destlat, double destlng) {
-        if (!mDownloading && mNetworkFragment != null) {
-            mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("getPath", sourcelat, sourcelng, destlat, destlng));
+
+
+        if (mNetworkFragment != null) {
+            //mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("getPath", sourcelat, sourcelng, destlat, destlng));
             mNetworkFragment.setmUrlString(makeURL("getPath", sourcelat, sourcelng, destlat, destlng));
             mNetworkFragment.startDownload();
             mDownloading = true;
@@ -228,18 +231,22 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void getTraffic(){
-        if (!mDownloading && mNetworkFragment != null) {
-            mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), "http://easel2.fulgentcorp.com:8081/getTraffic?api_key=gibson");
+
+
+        if (mNetworkFragment != null) {
+            //mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), "http://easel2.fulgentcorp.com:8081/getTraffic?api_key=gibson");
             mNetworkFragment.setmUrlString("http://easel2.fulgentcorp.com:8081/getTraffic?api_key=gibson");
             mNetworkFragment.startDownload();
             mDownloading = true;
             callbackType = 2;
         }
+
+
     }
 
     private void logPosition(double lat, double lng){
         if (!mDownloading && mNetworkFragment != null) {
-            mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("logPosition", lat, lng, lat, lng));
+            //mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("logPosition", lat, lng, lat, lng));
             mNetworkFragment.setmUrlString(makeURL("logPosition", lat, lng, lat, lng));
             mNetworkFragment.startDownload();
             mDownloading = true;
@@ -252,7 +259,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void updateFromDownload(String result) {
 
         if (result != null) {
-            Log.d("RESPONSE", result);
+            Log.d("UPDATE", "CB" + callbackType +result );
             switch (callbackType) {
 
                 case 1:
