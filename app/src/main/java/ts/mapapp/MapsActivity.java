@@ -61,7 +61,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private TileOverlay mOverlay;
     DatabaseTable db;
     private static final String TAG = "debug tag";
-
+    private LatLng mDestination;
     LocationManager locM;
     LocationListener locL;
     Location currentLoc;
@@ -102,7 +102,19 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onLocationChanged(Location location) {
                 currentLoc = location;
                 logPosition(currentLoc.getLatitude(),currentLoc.getLongitude());
+                try {
+                    Thread.sleep(2);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                if(Double.compare(currentLoc.getLatitude(), mDestination.latitude) == 0 && Double.compare(currentLoc.getLongitude(),mDestination.longitude) ==0){
+                    Toast.makeText(getApplicationContext(), "This is my Toast message!",
+                            Toast.LENGTH_LONG).show();
+                    mMap.clear();
+                }
                 if(followCheckBox.isChecked())
+                    mShortestPath.remove();
+                    getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),mDestination.latitude,mDestination.longitude);
                     mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLoc.getLatitude(),currentLoc.getLongitude())));
                 if(heatMapCheckBoc.isChecked() && heatMapFlag == 0){
                     getTraffic();
@@ -159,8 +171,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
-                getTraffic();
+                //getTraffic();
                 getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
+                mDestination = new LatLng(searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
                 Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
             }
@@ -175,8 +188,9 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 mMap.clear();
                 mMap.addMarker(pin.position(searched).title(query));
                 mMap.animateCamera(CameraUpdateFactory.newLatLng(searched));
-                getTraffic();
+                //getTraffic();
                 getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),searched.latitude,searched.longitude);
+                mDestination = new LatLng(searched.latitude,searched.longitude);
             } catch (NullPointerException e) {
                 Toast.makeText(getApplicationContext(),"Error: " + e.getMessage(),Toast.LENGTH_LONG).show();
             }
@@ -245,7 +259,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void logPosition(double lat, double lng){
-        if (!mDownloading && mNetworkFragment != null) {
+        if ( mNetworkFragment != null) {
             //mNetworkFragment = NetworkFragment.getInstance(getSupportFragmentManager(), makeURL("logPosition", lat, lng, lat, lng));
             mNetworkFragment.setmUrlString(makeURL("logPosition", lat, lng, lat, lng));
             mNetworkFragment.startDownload();
@@ -261,10 +275,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (result != null) {
             Log.d("UPDATE", "CB" + callbackType +result );
             switch (callbackType) {
-
                 case 1:
                     PolylineOptions resultPath = stringJSONToPolyLine(result);
                     mShortestPath = mMap.addPolyline(resultPath.color(Color.YELLOW));
+                    break;
                 case 2:
                     try {
                         ArrayList<LatLng> trafficPoints = stringToHeatmap(result);
@@ -275,9 +289,10 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                     } catch (JSONException e){
                         e.printStackTrace();
                     }
-
+                    break;
                 case 3:
                     //TODO SUCCESS MESSAGE
+                    break;
             }
         } else {
             Toast.makeText(this.getApplicationContext(), "Connection Error", Toast.LENGTH_SHORT).show();
