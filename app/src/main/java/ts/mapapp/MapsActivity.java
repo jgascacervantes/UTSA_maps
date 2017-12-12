@@ -61,7 +61,7 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
     private TileOverlay mOverlay;
     DatabaseTable db;
     private static final String TAG = "debug tag";
-    private LatLng mDestination;
+    private LatLng mDestination = new LatLng(0.0,0.0);
     LocationManager locM;
     LocationListener locL;
     Location currentLoc;
@@ -107,15 +107,16 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
-                if(Math.abs(currentLoc.getLatitude() - mDestination.latitude) <  1E-5 && Math.abs(currentLoc.getLongitude() - mDestination.longitude) <1E-5){
+                if(Math.abs(currentLoc.getLatitude() - mDestination.latitude) <  1E-4 && Math.abs(currentLoc.getLongitude() - mDestination.longitude) <1E-4){
                     Toast.makeText(getApplicationContext(), "You Have Reached Your Destination!",
                             Toast.LENGTH_LONG).show();
                     mMap.clear();
                 }
-                if(followCheckBox.isChecked())
+                if(followCheckBox.isChecked()) {
                     mShortestPath.remove();
-                    getPath(currentLoc.getLatitude(),currentLoc.getLongitude(),mDestination.latitude,mDestination.longitude);
-                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLoc.getLatitude(),currentLoc.getLongitude())));
+                    getPath(currentLoc.getLatitude(), currentLoc.getLongitude(), mDestination.latitude, mDestination.longitude);
+                    mMap.moveCamera(CameraUpdateFactory.newLatLng(new LatLng(currentLoc.getLatitude(), currentLoc.getLongitude())));
+                }
                 if(heatMapCheckBoc.isChecked() && heatMapFlag == 0){
                     getTraffic();
                     heatMapFlag = 1;
